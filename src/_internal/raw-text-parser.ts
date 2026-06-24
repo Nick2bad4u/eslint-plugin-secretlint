@@ -1,5 +1,7 @@
 import type { Linter } from "eslint";
 
+import { arrayIncludes } from "ts-extras";
+
 type RawProgram = Readonly<{
     body: [];
     comments: [];
@@ -23,9 +25,14 @@ const getDocumentEndPosition = (text: string): SourcePosition => {
             continue;
         }
         if (
-            character === "\n" ||
-            character === "\u{2028}" ||
-            character === "\u{2029}"
+            arrayIncludes(
+                [
+                    "\n",
+                    "\u{2028}",
+                    "\u{2029}",
+                ] as const,
+                character
+            )
         ) {
             line += 1;
             column = 0;
@@ -46,6 +53,9 @@ const createRawProgram = (text: string): RawProgram => ({
     type: "Program",
 });
 
+/**
+ * RawTextParser raw text parser contract.
+ */
 export const rawTextParser: Linter.Parser = {
     meta: {
         name: "eslint-plugin-secretlint/raw-text-parser",

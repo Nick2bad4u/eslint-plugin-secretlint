@@ -4,14 +4,15 @@ import { describe, expect, it } from "vitest";
 const runnerEntryUrl = new URL(
     "../src/_internal/secretlint-runner.ts",
     import.meta.url
-).href;
+);
+const runnerEntry = runnerEntryUrl.href;
 
 describe("secretlint worker lifecycle", () => {
     it("allows an isolated process to exit after bridge execution", () => {
-        expect.hasAssertions();
+        expect.assertions(2);
 
         const script = `
-            import { runSecretlintSynchronously } from ${JSON.stringify(runnerEntryUrl)};
+            import { runSecretlintSynchronously } from ${JSON.stringify(runnerEntry)};
             runSecretlintSynchronously({
                 code: ${JSON.stringify("OPENAI_API_KEY=sk-testtesttesttesttesttesttesttesttesttesttesttest\n")},
                 codeFilename: "sample.env",

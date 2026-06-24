@@ -11,6 +11,9 @@ import {
     secretlintConfigMetadataByName,
 } from "./_internal/secretlint-config-references.js";
 
+/**
+ * SecretlintConfigName secretlint config name contract.
+ */
 export type SecretlintConfigName = InternalSecretlintConfigName;
 
 const pluginName = "eslint-plugin-secretlint" as const;
@@ -23,9 +26,21 @@ const configFiles = [
     "**/secretlint.config.{js,cjs,mjs}",
 ] as const;
 
+/**
+ * SecretlintConfig secretlint config contract.
+ */
 export type SecretlintConfig = Linter.Config | readonly Linter.Config[];
+/**
+ * SecretlintConfigs secretlint configs contract.
+ */
 export type SecretlintConfigs = Record<SecretlintConfigName, SecretlintConfig>;
+/**
+ * SecretlintRuleId secretlint rule id contract.
+ */
 export type SecretlintRuleId = `secretlint/${SecretlintRuleName}`;
+/**
+ * SecretlintRuleName secretlint rule name contract.
+ */
 export type SecretlintRuleName = keyof typeof secretlintRules;
 type FlatConfigRules = NonNullable<Linter.Config["rules"]>;
 
@@ -33,6 +48,9 @@ const eslintPluginRules: typeof secretlintRules = secretlintRules;
 const version =
     typeof packageJson.version === "string" ? packageJson.version : "0.0.0";
 
+/**
+ * ESLint plugin object exported by `eslint-plugin-secretlint`.
+ */
 const secretlintPlugin: {
     configs: SecretlintConfigs;
     meta: { name: string; namespace: string; version: string };
@@ -120,5 +138,8 @@ secretlintPlugin.configs = {
     text: secretlintOnlyPreset,
 };
 
+/**
+ * SecretlintPlugin secretlint plugin contract.
+ */
 export type SecretlintPlugin = typeof secretlintPlugin;
 export default secretlintPlugin;

@@ -2,6 +2,9 @@ import type { ArrayValues } from "type-fest";
 
 import { objectHasOwn } from "ts-extras";
 
+/**
+ * SecretlintConfigNames secretlint config names contract.
+ */
 export const secretlintConfigNames = [
     "all",
     "configs",
@@ -11,14 +14,23 @@ export const secretlintConfigNames = [
     "text",
 ] as const;
 
+/**
+ * SecretlintConfigMetadata secretlint config metadata contract.
+ */
 export type SecretlintConfigMetadata = Readonly<{
     icon: string;
     presetName: `secretlint:${SecretlintConfigName}`;
     readmeOrder: number;
 }>;
 
+/**
+ * SecretlintConfigName secretlint config name contract.
+ */
 export type SecretlintConfigName = ArrayValues<typeof secretlintConfigNames>;
 
+/**
+ * SecretlintConfigMetadataByName secretlint config metadata by name contract.
+ */
 export const secretlintConfigMetadataByName: Readonly<
     Record<SecretlintConfigName, SecretlintConfigMetadata>
 > = {
@@ -42,6 +54,10 @@ export const secretlintConfigMetadataByName: Readonly<
     text: { icon: "🧪", presetName: "secretlint:text", readmeOrder: 5 },
 };
 
+/**
+ * SecretlintConfigNamesByReadmeOrder secretlint config names by readme order
+ * contract.
+ */
 export const secretlintConfigNamesByReadmeOrder: readonly SecretlintConfigName[] =
     [
         "recommended",
@@ -50,6 +66,9 @@ export const secretlintConfigNamesByReadmeOrder: readonly SecretlintConfigName[]
         "all",
     ];
 
+/**
+ * SecretlintConfigReferenceToName secretlint config reference to name contract.
+ */
 export const secretlintConfigReferenceToName = {
     "secretlint.configs.all": "all",
     "secretlint.configs.configs": "configuration",
@@ -59,9 +78,15 @@ export const secretlintConfigReferenceToName = {
     "secretlint.configs.text": "secretlintOnly",
 } as const;
 
+/**
+ * SecretlintConfigReference secretlint config reference contract.
+ */
 export type SecretlintConfigReference =
     keyof typeof secretlintConfigReferenceToName;
 
+/**
+ * IsSecretlintConfigReference is secretlint config reference contract.
+ */
 export const isSecretlintConfigReference = (
     value: string
 ): value is SecretlintConfigReference =>

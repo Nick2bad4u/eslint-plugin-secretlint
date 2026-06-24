@@ -41,6 +41,12 @@ const toEslintLoc = (
     },
 });
 
+/**
+ * SecretlintRule ESLint rule contract.
+ */
+/**
+ * SecretlintRule ESLint bridge rule contract.
+ */
 const secretlintRule: RuleModuleWithDocs<MessageIds, Options> = createTypedRule<
     MessageIds,
     Options
@@ -48,31 +54,32 @@ const secretlintRule: RuleModuleWithDocs<MessageIds, Options> = createTypedRule<
     create: (context, [rawOptions = {}]) =>
         toRuleListener({
             Program() {
+                const lintOptions = {
+                    code: context.sourceCode.text,
+                    codeFilename: context.physicalFilename,
+                    cwd: context.cwd,
+                    ...(isDefined(rawOptions.configFile) && {
+                        configFile: rawOptions.configFile,
+                    }),
+                    ...(isDefined(rawOptions.ignoreFile) && {
+                        ignoreFile: rawOptions.ignoreFile,
+                    }),
+                    ...(isDefined(rawOptions.locale) && {
+                        locale: rawOptions.locale,
+                    }),
+                    ...(isDefined(rawOptions.maskSecrets) && {
+                        maskSecrets: rawOptions.maskSecrets,
+                    }),
+                    ...(isDefined(rawOptions.respectGitignore) && {
+                        respectGitignore: rawOptions.respectGitignore,
+                    }),
+                    ...(isDefined(rawOptions.timeoutMs) && {
+                        timeoutMs: rawOptions.timeoutMs,
+                    }),
+                };
                 let lintResult: ReturnType<typeof runSecretlintSynchronously>;
                 try {
-                    lintResult = runSecretlintSynchronously({
-                        code: context.sourceCode.text,
-                        codeFilename: context.physicalFilename,
-                        cwd: context.cwd,
-                        ...(isDefined(rawOptions.configFile) && {
-                            configFile: rawOptions.configFile,
-                        }),
-                        ...(isDefined(rawOptions.ignoreFile) && {
-                            ignoreFile: rawOptions.ignoreFile,
-                        }),
-                        ...(isDefined(rawOptions.locale) && {
-                            locale: rawOptions.locale,
-                        }),
-                        ...(isDefined(rawOptions.maskSecrets) && {
-                            maskSecrets: rawOptions.maskSecrets,
-                        }),
-                        ...(isDefined(rawOptions.respectGitignore) && {
-                            respectGitignore: rawOptions.respectGitignore,
-                        }),
-                        ...(isDefined(rawOptions.timeoutMs) && {
-                            timeoutMs: rawOptions.timeoutMs,
-                        }),
-                    });
+                    lintResult = runSecretlintSynchronously(lintOptions);
                 } catch (error: unknown) {
                     context.report({
                         data: {
@@ -109,7 +116,8 @@ const secretlintRule: RuleModuleWithDocs<MessageIds, Options> = createTypedRule<
                 "secretlint.configs.secretlintOnly",
                 "secretlint.configs.all",
             ],
-            description: "run Secretlint against text files from ESLint.",
+            description:
+                "require Secretlint diagnostics for text files from ESLint.",
             recommended: true,
             requiresTypeChecking: false,
             url: "https://nick2bad4u.github.io/eslint-plugin-secretlint/docs/rules/secretlint",
@@ -119,7 +127,14 @@ const secretlintRule: RuleModuleWithDocs<MessageIds, Options> = createTypedRule<
                 "Secretlint configuration error: {{message}}",
             secretlintProblem: "Secretlint ({{rule}}): {{text}}",
         },
-        schema: [{ additionalProperties: true, type: "object" }],
+        schema: [
+            {
+                additionalProperties: true,
+                description:
+                    "Options forwarded to the underlying bridge linter for this ESLint rule.",
+                type: "object",
+            },
+        ],
         type: "problem",
     },
     name: "secretlint",

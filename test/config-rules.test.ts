@@ -22,6 +22,7 @@ const isRuleModule = (value: unknown): value is RuleWithDocs =>
 describe("secretlint config rules", () => {
     it("registers config-authoring rules with docs metadata", () => {
         expect.hasAssertions();
+        expect(isRuleModule({})).not.toBe(true);
 
         for (const [name, rule] of Object.entries(secretlintPlugin.rules)) {
             if (!isRuleModule(rule)) {

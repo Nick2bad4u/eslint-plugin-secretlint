@@ -2,6 +2,9 @@ import type { RuleModuleWithDocs } from "../_internal/typed-rule.js";
 
 import { createRequirePropertyRule } from "../_internal/config-rule-factories.js";
 
+/**
+ * DisallowSecretlintUnknownRulePropertiesRule ESLint rule contract.
+ */
 const disallowSecretlintUnknownRulePropertiesRule: RuleModuleWithDocs<
     "configProblem",
     readonly []

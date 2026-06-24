@@ -8,6 +8,7 @@ import requireSecretlintConfigFileNamingConventionRule from "../rules/require-se
 import requireSecretlintRuleIdRule from "../rules/require-secretlint-rule-id.js";
 import requireSecretlintRulesArrayRule from "../rules/require-secretlint-rules-array.js";
 import requireSecretlintRulesPackagesInstalledRule from "../rules/require-secretlint-rules-packages-installed.js";
+// eslint-disable-next-line import-x/max-dependencies -- Rule registries intentionally import every rule module for plugin export wiring.
 import secretlintRule from "../rules/secretlint.js";
 
 type SecretlintRulesRegistry = Readonly<{
@@ -24,6 +25,9 @@ type SecretlintRulesRegistry = Readonly<{
     secretlint: typeof secretlintRule;
 }>;
 
+/**
+ * SecretlintRules secretlint rules contract.
+ */
 export const secretlintRules: SecretlintRulesRegistry = {
     "disallow-secretlint-duplicate-rules": disallowSecretlintDuplicateRulesRule,
     "disallow-secretlint-empty-rule-id": disallowSecretlintEmptyRuleIdRule,
@@ -44,6 +48,9 @@ export const secretlintRules: SecretlintRulesRegistry = {
     secretlint: secretlintRule,
 } as const satisfies SecretlintRulesRegistry;
 
+/**
+ * SecretlintRuleNamePattern secretlint rule name pattern contract.
+ */
 export type SecretlintRuleNamePattern = keyof typeof secretlintRules;
 
 export default secretlintRules;

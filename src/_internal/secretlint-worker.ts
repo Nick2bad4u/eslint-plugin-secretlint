@@ -1,6 +1,8 @@
+import type { JsonObject } from "type-fest";
+
 import { isMainThread, parentPort } from "node:worker_threads";
 import { runSecretLint } from "secretlint";
-import { isDefined, safeCastTo } from "ts-extras";
+import { isDefined } from "ts-extras";
 
 import type {
     SecretlintWorkerRequest,
@@ -11,38 +13,63 @@ import type {
 
 const DONE_STATE = 1 as const;
 
-type SecretLintJsonMessage = Readonly<{
-    loc?: {
-        end?: { column?: number; line?: number };
-        start?: { column?: number; line?: number };
-    };
-    message?: string;
-    messageId?: string;
-    ruleId?: string;
-    severity?: string;
-}>;
-type SecretLintJsonResult = Readonly<{
-    messages?: readonly SecretLintJsonMessage[];
-}>;
+type JsonRecord = Readonly<JsonObject>;
+
+const isJsonRecord = (value: unknown): value is JsonRecord =>
+    typeof value === "object" && value !== null;
+
+const toJsonRecord = (value: unknown): JsonRecord =>
+    isJsonRecord(value) ? value : {};
 
 const toSerializableMessage = (
-    message: SecretLintJsonMessage
-): SerializableSecretlintMessage => ({
-    column: message.loc?.start?.column ?? 1,
-    ...(typeof message.loc?.end?.column === "number" && {
-        endColumn: message.loc.end.column,
-    }),
-    ...(typeof message.loc?.end?.line === "number" && {
-        endLine: message.loc.end.line,
-    }),
-    line: message.loc?.start?.line ?? 1,
-    message: message.message ?? "Secretlint reported a problem.",
-    ...(typeof message.messageId === "string" && {
-        messageId: message.messageId,
-    }),
-    ruleId: message.ruleId ?? "secretlint",
-    severity: message.severity ?? "error",
-});
+    message: JsonRecord
+): SerializableSecretlintMessage => {
+    const loc = toJsonRecord(message["loc"]);
+    const start = toJsonRecord(loc["start"]);
+    const end = toJsonRecord(loc["end"]);
+    const column = start["column"];
+    const endColumn = end["column"];
+    const endLine = end["line"];
+    const line = start["line"];
+    const messageText = message["message"];
+    const messageId = message["messageId"];
+    const ruleId = message["ruleId"];
+    const severity = message["severity"];
+    return {
+        column: typeof column === "number" ? column : 1,
+        ...(typeof endColumn === "number" && {
+            endColumn,
+        }),
+        ...(typeof endLine === "number" && {
+            endLine,
+        }),
+        line: typeof line === "number" ? line : 1,
+        message:
+            typeof messageText === "string"
+                ? messageText
+                : "Secretlint reported a problem.",
+        ...(typeof messageId === "string" && {
+            messageId,
+        }),
+        ruleId: typeof ruleId === "string" ? ruleId : "secretlint",
+        severity: typeof severity === "string" ? severity : "error",
+    };
+};
+
+const parseSecretlintOutput = (
+    stdout: null | string | undefined
+): SerializableSecretlintMessage[] => {
+    const parsedJson: unknown = JSON.parse(stdout ?? "[]");
+    if (!Array.isArray(parsedJson)) return [];
+    return parsedJson.filter(isJsonRecord).flatMap((entry) => {
+        const messages = entry["messages"];
+        return Array.isArray(messages)
+            ? messages
+                  .filter(isJsonRecord)
+                  .map((message) => toSerializableMessage(message))
+            : [];
+    });
+};
 
 const runSecretlint = async (
     request: SecretlintWorkerRequest
@@ -72,16 +99,9 @@ const runSecretlint = async (
             ...(isDefined(options.locale) && { locale: options.locale }),
         },
     });
-    if (isDefined(result.stderr)) throw result.stderr;
-    const parsed = safeCastTo<readonly SecretLintJsonResult[]>(
-        JSON.parse(result.stdout ?? "[]")
-    );
+    if (result.stderr instanceof Error) throw result.stderr;
     return {
-        messages: parsed.flatMap((entry) =>
-            (entry.messages ?? []).map((message) =>
-                toSerializableMessage(message)
-            )
-        ),
+        messages: parseSecretlintOutput(result.stdout),
     };
 };
 
@@ -89,6 +109,7 @@ const notifyCompletion = (
     request: SecretlintWorkerRequest,
     response: SecretlintWorkerResponse
 ): void => {
+    // eslint-disable-next-line unicorn/require-post-message-target-origin -- MessagePort from node:worker_threads has no browser targetOrigin parameter.
     request.port.postMessage(response);
     request.port.close();
     const signal = new Int32Array(request.signalBuffer);
