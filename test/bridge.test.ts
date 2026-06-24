@@ -2,7 +2,7 @@ import { ESLint, type Linter } from "eslint";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import secretlintPlugin from "../src/plugin";
 
@@ -35,6 +35,39 @@ const createEngine = (
     });
 
 describe("secretlint bridge rule", () => {
+    it("accepts clean text files without diagnostics", async () => {
+        expect.assertions(1);
+
+        await usingTemporaryDirectory(
+            "secretlint-bridge-clean-",
+            async (temporaryDirectory) => {
+                const configPath = path.join(
+                    temporaryDirectory,
+                    ".secretlintrc.cjs"
+                );
+                const ignorePath = path.join(
+                    temporaryDirectory,
+                    ".secretlintignore"
+                );
+                writeFileSync(configPath, "module.exports = { rules: [] };\n");
+                writeFileSync(ignorePath, "\n");
+                const eslint = createEngine({
+                    configFile: configPath,
+                    ignoreFile: ignorePath,
+                    locale: "en",
+                    maskSecrets: false,
+                    respectGitignore: false,
+                    timeoutMs: 30_000,
+                });
+                const [result] = await eslint.lintText("hello world\n", {
+                    filePath: "sample.txt",
+                });
+
+                expect(result?.messages).toHaveLength(0);
+            }
+        );
+    }, 30_000);
+
     it("reports Secretlint diagnostics through ESLint", async () => {
         expect.assertions(3);
 
@@ -65,6 +98,68 @@ describe("secretlint bridge rule", () => {
                     expect.any(String)
                 );
             }
+        );
+    }, 30_000);
+
+    it("reports serialized Secretlint runner messages with locations", async () => {
+        expect.assertions(4);
+
+        vi.resetModules();
+        vi.doMock(import("../src/_internal/secretlint-runner.js"), () => ({
+            runSecretlintSynchronously: () => ({
+                messages: [
+                    {
+                        column: 1,
+                        endColumn: 6,
+                        endLine: 1,
+                        line: 1,
+                        message: "mock secret found",
+                        ruleId: "mock-secret",
+                        severity: "error",
+                    },
+                ],
+            }),
+        }));
+        const { default: mockedSecretlintPlugin } =
+            await import("../src/plugin");
+        const mockedBridgeConfig = mockedSecretlintPlugin.configs
+            .secretlintOnly as Linter.Config;
+        const eslint = new ESLint({
+            overrideConfig: [
+                {
+                    ...mockedBridgeConfig,
+                    rules: {
+                        "secretlint/secretlint": "error",
+                    },
+                },
+            ],
+            overrideConfigFile: true,
+        });
+        const [result] = await eslint.lintText("secret\n", {
+            filePath: "sample.txt",
+        });
+
+        vi.doUnmock(import("../src/_internal/secretlint-runner.js"));
+
+        expect(result?.messages[0]?.message).toContain("mock secret found");
+        expect(result?.messages[0]?.line).toBe(1);
+        expect(result?.messages[0]?.column).toBe(1);
+        expect(result?.messages[0]?.endColumn).toBe(6);
+    });
+
+    it("reports Secretlint execution failures as configuration errors", async () => {
+        expect.assertions(2);
+
+        const eslint = createEngine({
+            configFile: "missing-secretlint-config.cjs",
+        });
+        const [result] = await eslint.lintText("hello world\n", {
+            filePath: "sample.txt",
+        });
+
+        expect(result?.messages[0]?.ruleId).toBe("secretlint/secretlint");
+        expect(result?.messages[0]?.message).toContain(
+            "Secretlint configuration error"
         );
     }, 30_000);
 });
