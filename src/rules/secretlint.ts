@@ -8,7 +8,7 @@ import {
 } from "../_internal/typed-rule.js";
 
 type MessageIds = "secretlintConfigError" | "secretlintProblem";
-type Options = readonly [SecretlintRuleOption?];
+type Options = [SecretlintRuleOption?];
 type ReportLocation = Readonly<{
     end: { column: number; line: number };
     start: { column: number; line: number };

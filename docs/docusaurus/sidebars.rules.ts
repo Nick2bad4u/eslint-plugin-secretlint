@@ -3,6 +3,7 @@ import type { SidebarsConfig } from "@docusaurus/plugin-content-docs";
 const sidebars = {
     rules: [
         {
+            className: "sb-cat-guides",
             collapsed: false,
             items: [
                 "guides/intro",
@@ -15,31 +16,49 @@ const sidebars = {
             type: "category",
         },
         {
+            className: "sb-cat-presets",
             collapsed: false,
             items: [
-                "presets/recommended",
-                "presets/secretlint-only",
-                "presets/configuration",
-                "presets/all",
+                {
+                    className: "sb-preset-recommended",
+                    id: "presets/recommended",
+                    type: "doc",
+                },
+                {
+                    className: "sb-preset-only",
+                    id: "presets/secretlint-only",
+                    type: "doc",
+                },
+                {
+                    className: "sb-preset-configuration",
+                    id: "presets/configuration",
+                    type: "doc",
+                },
+                {
+                    className: "sb-preset-all",
+                    id: "presets/all",
+                    type: "doc",
+                },
             ],
             label: "Presets",
             link: { id: "presets/index", type: "doc" },
             type: "category",
         },
         {
+            className: "sb-cat-rules",
             collapsed: false,
             items: [
                 "secretlint",
                 "require-secretlint-config-file-naming-convention",
                 "require-secretlint-rules-array",
                 "require-secretlint-rule-id",
-                "disallow-secretlint-empty-rule-id",
                 "disallow-secretlint-duplicate-rules",
+                "disallow-secretlint-empty-rule-id",
                 "disallow-secretlint-relative-rule-paths",
-                "require-secretlint-rules-packages-installed",
                 "disallow-secretlint-unknown-rule-properties",
                 "prefer-secretlint-allow-message-ids-array",
                 "prefer-secretlint-nested-rules-array",
+                "require-secretlint-rules-packages-installed",
             ],
             label: "Rules",
             link: {
@@ -51,4 +70,5 @@ const sidebars = {
         },
     ],
 } satisfies SidebarsConfig;
+
 export default sidebars;

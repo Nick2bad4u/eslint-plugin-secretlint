@@ -2,6 +2,7 @@ import type { ESLint, Linter } from "eslint";
 
 import tsParser from "@typescript-eslint/parser";
 
+// eslint-disable-next-line import-x/extensions -- Node JSON import attributes require the file extension at runtime.
 import packageJson from "../package.json" with { type: "json" };
 import { rawTextParser } from "./_internal/raw-text-parser.js";
 import { secretlintRules } from "./_internal/rules-registry.js";
@@ -28,16 +29,14 @@ export type SecretlintRuleId = `secretlint/${SecretlintRuleName}`;
 export type SecretlintRuleName = keyof typeof secretlintRules;
 type FlatConfigRules = NonNullable<Linter.Config["rules"]>;
 
-const eslintPluginRules = secretlintRules as NonNullable<
-    ESLint.Plugin["rules"]
-> &
-    typeof secretlintRules;
+const eslintPluginRules: typeof secretlintRules = secretlintRules;
 const version =
     typeof packageJson.version === "string" ? packageJson.version : "0.0.0";
 
-const secretlintPlugin: ESLint.Plugin & {
+const secretlintPlugin: {
     configs: SecretlintConfigs;
     meta: { name: string; namespace: string; version: string };
+    processors: NonNullable<ESLint.Plugin["processors"]>;
     rules: typeof eslintPluginRules;
 } = {
     configs: {
@@ -52,6 +51,9 @@ const secretlintPlugin: ESLint.Plugin & {
     processors: {},
     rules: eslintPluginRules,
 };
+const secretlintPluginForEslint =
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- ESLint's public Plugin type requires mutable option/config arrays, while this package exposes readonly typed rule metadata internally.
+    secretlintPlugin as unknown as ESLint.Plugin;
 
 const secretlintOnlyPreset: Linter.Config = {
     files: [...bridgeFiles],
@@ -66,7 +68,7 @@ const secretlintOnlyPreset: Linter.Config = {
     ],
     languageOptions: { parser: rawTextParser },
     name: secretlintConfigMetadataByName.secretlintOnly.presetName,
-    plugins: { [pluginNamespace]: secretlintPlugin },
+    plugins: { [pluginNamespace]: secretlintPluginForEslint },
     rules: { "secretlint/secretlint": "error" },
 };
 
@@ -83,6 +85,15 @@ const configurationRules = {
     "secretlint/require-secretlint-rules-packages-installed": "warn",
 } as const satisfies FlatConfigRules;
 
+const recommendedConfigurationRules = {
+    "secretlint/disallow-secretlint-duplicate-rules": "warn",
+    "secretlint/disallow-secretlint-empty-rule-id": "warn",
+    "secretlint/disallow-secretlint-relative-rule-paths": "warn",
+    "secretlint/require-secretlint-config-file-naming-convention": "warn",
+    "secretlint/require-secretlint-rule-id": "warn",
+    "secretlint/require-secretlint-rules-array": "warn",
+} as const satisfies FlatConfigRules;
+
 const configurationPreset: Linter.Config = {
     files: [...configFiles],
     languageOptions: {
@@ -90,15 +101,21 @@ const configurationPreset: Linter.Config = {
         parserOptions: { ecmaVersion: "latest", sourceType: "module" },
     },
     name: secretlintConfigMetadataByName.configuration.presetName,
-    plugins: { [pluginNamespace]: secretlintPlugin },
+    plugins: { [pluginNamespace]: secretlintPluginForEslint },
     rules: configurationRules,
+};
+
+const recommendedConfigurationPreset: Linter.Config = {
+    ...configurationPreset,
+    name: secretlintConfigMetadataByName.recommended.presetName,
+    rules: recommendedConfigurationRules,
 };
 
 secretlintPlugin.configs = {
     all: [secretlintOnlyPreset, configurationPreset],
     configs: configurationPreset,
     configuration: configurationPreset,
-    recommended: [secretlintOnlyPreset, configurationPreset],
+    recommended: [secretlintOnlyPreset, recommendedConfigurationPreset],
     secretlintOnly: secretlintOnlyPreset,
     text: secretlintOnlyPreset,
 };
