@@ -54,6 +54,22 @@ const getEslintMajorVersion = (version) => {
  * @param {PluginConfigs} pluginConfigs
  * @param {string} configName
  *
+ * @throws {TypeError} When the requested config is missing.
+ */
+const getFlatConfigArray = (pluginConfigs, configName) => {
+    const configValue = pluginConfigs[configName];
+    if (configValue === undefined) {
+        throw new TypeError(`Could not find plugin.configs.${configName}.`);
+    }
+    return Array.isArray(configValue)
+        ? configValue
+        : [/** @type {FlatConfig} */ (configValue)];
+};
+
+/**
+ * @param {PluginConfigs} pluginConfigs
+ * @param {string} configName
+ *
  * @throws {TypeError} When the requested config is missing or is not singular.
  */
 const getSingleFlatConfig = (pluginConfigs, configName) => {
@@ -112,22 +128,26 @@ const run = async () => {
             'module.exports = { rules: [{ id: "@secretlint/secretlint-rule-pattern", options: { patterns: [{ name: "OpenAI", pattern: "/sk-[A-Za-z0-9]{20,}/" }] } }] };\n'
         );
 
-        const bridgeConfig = getSingleFlatConfig(
+        const bridgeConfig = getFlatConfigArray(
             pluginConfigs,
             "secretlintOnly"
+        ).map((config) =>
+            config.rules?.["secretlint/secretlint"] === undefined
+                ? config
+                : {
+                      ...config,
+                      rules: {
+                          ...config.rules,
+                          "secretlint/secretlint": [
+                              "error",
+                              { configFile: configPath },
+                          ],
+                      },
+                  }
         );
         const bridgeEslint = new ESLint({
             cwd: process.cwd(),
-            overrideConfig: {
-                ...bridgeConfig,
-                rules: {
-                    ...bridgeConfig.rules,
-                    "secretlint/secretlint": [
-                        "error",
-                        { configFile: configPath },
-                    ],
-                },
-            },
+            overrideConfig: bridgeConfig,
             overrideConfigFile: true,
         });
         const [bridgeResult] = await bridgeEslint.lintText(
