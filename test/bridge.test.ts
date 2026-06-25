@@ -2,11 +2,15 @@ import { ESLint, type Linter } from "eslint";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 
 import secretlintPlugin from "../src/plugin";
 
 const bridgeConfig = secretlintPlugin.configs.secretlintOnly as Linter.Config;
+const fixturesDirectory = fileURLToPath(
+    new URL("fixtures/bridge/", import.meta.url)
+);
 
 const usingTemporaryDirectory = async <Result>(
     prefix: string,
@@ -20,9 +24,11 @@ const usingTemporaryDirectory = async <Result>(
     }
 };
 const createEngine = (
-    ruleOptions: Readonly<Record<string, unknown>> = {}
+    ruleOptions: Readonly<Record<string, unknown>> = {},
+    cwd?: string
 ): ESLint =>
     new ESLint({
+        ...(cwd !== undefined && { cwd }),
         overrideConfig: [
             {
                 ...bridgeConfig,
@@ -68,8 +74,39 @@ describe("secretlint bridge rule", () => {
         );
     }, 30_000);
 
-    it("reports Secretlint diagnostics through ESLint", async () => {
+    it("lints text fixture files from disk with forwarded options", async () => {
         expect.assertions(3);
+
+        const eslint = createEngine(
+            {
+                configFile: path.join(fixturesDirectory, ".secretlintrc.cjs"),
+                ignoreFile: path.join(fixturesDirectory, ".secretlintignore"),
+                locale: "en",
+                maskSecrets: false,
+                respectGitignore: false,
+                timeoutMs: 30_000,
+            },
+            fixturesDirectory
+        );
+        const results = await eslint.lintFiles(["clean.txt", "leaky.env"]);
+        const messagesByBasename = new Map(
+            results.map((result) => [
+                path.basename(result.filePath),
+                result.messages,
+            ])
+        );
+        const leakyMessages = messagesByBasename.get("leaky.env") ?? [];
+
+        expect(messagesByBasename.get("clean.txt")).toHaveLength(0);
+        expect(leakyMessages.length).toBeGreaterThan(0);
+        expect(leakyMessages[0]).toMatchObject({
+            messageId: "secretlintProblem",
+            ruleId: "secretlint/secretlint",
+        });
+    }, 30_000);
+
+    it("reports Secretlint diagnostics through ESLint", async () => {
+        expect.assertions(4);
 
         await usingTemporaryDirectory(
             "secretlint-bridge-",
@@ -80,11 +117,11 @@ describe("secretlint bridge rule", () => {
                 );
                 writeFileSync(
                     configPath,
-                    'module.exports = { rules: [{ id: "@secretlint/secretlint-rule-pattern", options: { patterns: [{ name: "OpenAI", pattern: "/sk-[A-Za-z0-9]{20,}/" }] } }] };\n'
+                    'module.exports = { rules: [{ id: "@secretlint/secretlint-rule-pattern", options: { patterns: [{ name: "Fixture secret", pattern: "/fixture-secret-[A-Za-z0-9]{20,}/" }] } }] };\n'
                 );
                 const eslint = createEngine({ configFile: configPath });
                 const [result] = await eslint.lintText(
-                    "OPENAI_API_KEY=sk-testtesttesttesttesttesttesttesttesttesttesttest\n",
+                    "TOKEN=fixture-secret-testtesttesttesttesttesttesttest\n",
                     {
                         filePath: "sample.env",
                     }
@@ -93,6 +130,9 @@ describe("secretlint bridge rule", () => {
                 expect(result?.messages).not.toHaveLength(0);
                 expect(result?.messages[0]?.ruleId).toBe(
                     "secretlint/secretlint"
+                );
+                expect(result?.messages[0]?.messageId).toBe(
+                    "secretlintProblem"
                 );
                 expect(result?.messages[0]?.message).toStrictEqual(
                     expect.any(String)
