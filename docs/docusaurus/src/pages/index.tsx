@@ -177,11 +177,6 @@ export default function Home(): JSX.Element {
                                 src={logoSrc}
                                 width="240"
                             />
-                            <div className={styles.heroPanelDetails}>
-                                <span>.secretlintrc.cjs</span>
-                                <span>secretlint/secretlint</span>
-                                <span>secretlintOnly</span>
-                            </div>
                         </aside>
                     </div>
 

@@ -1,6 +1,18 @@
 # Presets
 
-This preset is exported by the plugin.
+`eslint-plugin-secretlint` exposes focused flat-config presets for secret scanning and Secretlint config authoring.
+
+- `🟡` [`secretlint.configs.recommended`](./recommended.md) — default rollout path for secret diagnostics plus common config hygiene.
+- `🧪` [`secretlint.configs.secretlintOnly`](./secretlint-only.md) — bridge-only text secret scanning.
+- `🔧` [`secretlint.configs.configuration`](./configuration.md) — config-authoring rules without content scanning.
+- `🟣` [`secretlint.configs.all`](./all.md) — every current bridge and config-authoring rule.
+
+Legacy aliases remain available for compatibility:
+
+- `secretlint.configs.text` → `secretlint.configs.secretlintOnly`
+- `secretlint.configs.configs` → `secretlint.configs.configuration`
+
+Use the preset pages in this section for copy/paste config snippets and rollout notes.
 
 ## Rule matrix
 
