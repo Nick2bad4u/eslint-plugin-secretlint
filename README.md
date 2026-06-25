@@ -26,6 +26,9 @@ export default [...secretlint.configs.recommended];
 
 ## Presets
 
+Array presets such as `recommended`, `secretlintOnly`, and `all` should be
+spread into flat config arrays.
+
 | Preset                                                                         | Purpose                                                      |
 | ------------------------------------------------------------------------------ | ------------------------------------------------------------ |
 | [`secretlint.configs.recommended`](./docs/rules/presets/recommended.md)        | Enable the Secretlint bridge plus config authoring guidance. |

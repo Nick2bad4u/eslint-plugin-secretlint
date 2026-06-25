@@ -5,9 +5,14 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 
-import secretlintPlugin from "../src/plugin";
+import secretlintPlugin, { type SecretlintConfig } from "../src/plugin";
 
-const bridgeConfig = secretlintPlugin.configs.secretlintOnly as Linter.Config;
+const isConfigArray = (
+    config: SecretlintConfig
+): config is readonly Linter.Config[] => Array.isArray(config);
+const toConfigArray = (config: SecretlintConfig): readonly Linter.Config[] =>
+    isConfigArray(config) ? config : [config];
+const bridgeConfigs = toConfigArray(secretlintPlugin.configs.secretlintOnly);
 const fixturesDirectory = fileURLToPath(
     new URL("fixtures/bridge/", import.meta.url)
 );
@@ -30,8 +35,9 @@ const createEngine = (
     new ESLint({
         ...(cwd !== undefined && { cwd }),
         overrideConfig: [
+            ...bridgeConfigs,
             {
-                ...bridgeConfig,
+                files: ["**/*"],
                 rules: {
                     "secretlint/secretlint": ["error", ruleOptions],
                 },
@@ -162,12 +168,14 @@ describe("secretlint bridge rule", () => {
         }));
         const { default: mockedSecretlintPlugin } =
             await import("../src/plugin");
-        const mockedBridgeConfig = mockedSecretlintPlugin.configs
-            .secretlintOnly as Linter.Config;
+        const mockedBridgeConfigs = toConfigArray(
+            mockedSecretlintPlugin.configs.secretlintOnly
+        );
         const eslint = new ESLint({
             overrideConfig: [
+                ...mockedBridgeConfigs,
                 {
-                    ...mockedBridgeConfig,
+                    files: ["**/*"],
                     rules: {
                         "secretlint/secretlint": "error",
                     },

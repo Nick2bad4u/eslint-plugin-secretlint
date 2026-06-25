@@ -18,12 +18,22 @@ export type SecretlintConfigName = InternalSecretlintConfigName;
 
 const pluginName = "eslint-plugin-secretlint" as const;
 const pluginNamespace = "secretlint" as const;
-const bridgeFiles = [
+const parserNeutralBridgeFiles = [
     "**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts,json,jsonc,yml,yaml,md,mdx,txt,env,ini,toml,xml,html,css,scss,sass}",
 ] as const;
+const rawTextBridgeFiles = ["**/*.{env,ini,toml,txt,xml}"] as const;
 const configFiles = [
     "**/.secretlintrc.{json,jsonc,yml,yaml,js,cjs,mjs}",
     "**/secretlint.config.{js,cjs,mjs}",
+] as const;
+const bridgeIgnores = [
+    "**/.cache/**",
+    "**/build/**",
+    "**/coverage/**",
+    "**/dist/**",
+    "**/docs/docusaurus/.docusaurus/**",
+    "**/docs/docusaurus/build/**",
+    "**/node_modules/**",
 ] as const;
 
 /**
@@ -73,22 +83,30 @@ const secretlintPluginForEslint =
     // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- ESLint's public Plugin type requires mutable option/config arrays, while this package exposes readonly typed rule metadata internally.
     secretlintPlugin as unknown as ESLint.Plugin;
 
-const secretlintOnlyPreset: Linter.Config = {
-    files: [...bridgeFiles],
-    ignores: [
-        "**/node_modules/**",
-        "**/dist/**",
-        "**/build/**",
-        "**/coverage/**",
-        "**/.cache/**",
-        "**/docs/docusaurus/build/**",
-        "**/docs/docusaurus/.docusaurus/**",
-    ],
+const bridgeRules = {
+    "secretlint/secretlint": "error",
+} as const satisfies FlatConfigRules;
+
+const parserNeutralBridgePreset: Linter.Config = {
+    files: [...parserNeutralBridgeFiles],
+    ignores: [...bridgeIgnores],
+    name: `${secretlintConfigMetadataByName.secretlintOnly.presetName}:parser-neutral`,
+    plugins: { [pluginNamespace]: secretlintPluginForEslint },
+    rules: bridgeRules,
+};
+
+const rawTextBridgePreset: Linter.Config = {
+    files: [...rawTextBridgeFiles],
+    ignores: [...bridgeIgnores],
     languageOptions: { parser: rawTextParser },
     name: secretlintConfigMetadataByName.secretlintOnly.presetName,
     plugins: { [pluginNamespace]: secretlintPluginForEslint },
-    rules: { "secretlint/secretlint": "error" },
+    rules: bridgeRules,
 };
+const secretlintOnlyPreset = [
+    parserNeutralBridgePreset,
+    rawTextBridgePreset,
+] as const satisfies readonly Linter.Config[];
 
 const configurationRules = {
     "secretlint/disallow-secretlint-duplicate-rules": "warn",
@@ -130,10 +148,10 @@ const recommendedConfigurationPreset: Linter.Config = {
 };
 
 secretlintPlugin.configs = {
-    all: [secretlintOnlyPreset, configurationPreset],
+    all: [...secretlintOnlyPreset, configurationPreset],
     configs: configurationPreset,
     configuration: configurationPreset,
-    recommended: [secretlintOnlyPreset, recommendedConfigurationPreset],
+    recommended: [...secretlintOnlyPreset, recommendedConfigurationPreset],
     secretlintOnly: secretlintOnlyPreset,
     text: secretlintOnlyPreset,
 };

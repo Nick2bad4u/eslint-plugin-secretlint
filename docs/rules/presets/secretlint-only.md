@@ -9,7 +9,7 @@ This is the smallest adoption surface. It runs upstream Secretlint through ESLin
 ```ts
 import secretlint from "eslint-plugin-secretlint";
 
-export default [secretlint.configs.secretlintOnly];
+export default [...secretlint.configs.secretlintOnly];
 ```
 
 Legacy alias: `secretlint.configs.text` remains supported.
@@ -23,7 +23,8 @@ Legacy alias: `secretlint.configs.text` remains supported.
 ## What this preset includes
 
 - `secretlint/secretlint`
-- Raw text parser wiring for the files matched by the preset.
+- Parser-neutral bridge wiring for files that already have an ESLint parser.
+- Raw text parser fallback for plain text file types.
 - Default ignores for common generated directories.
 
 ## What this preset does not include
