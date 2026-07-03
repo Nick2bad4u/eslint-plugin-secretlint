@@ -5,7 +5,7 @@ import { createRequirePropertyRule } from "../_internal/config-rule-factories.js
 /**
  * DisallowSecretlintDuplicateRulesRule ESLint rule contract.
  */
-const disallowSecretlintDuplicateRulesRule: RuleModuleWithDocs<
+const secretlintDuplicateRulesRule: RuleModuleWithDocs<
     "configProblem",
     readonly []
 > = createRequirePropertyRule({
@@ -20,4 +20,4 @@ const disallowSecretlintDuplicateRulesRule: RuleModuleWithDocs<
     recommended: true,
 });
 
-export default disallowSecretlintDuplicateRulesRule;
+export default secretlintDuplicateRulesRule;

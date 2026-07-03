@@ -1,8 +1,5 @@
 export type PresetDisplayName =
-    | "all"
-    | "configuration"
-    | "recommended"
-    | "secretlintOnly";
+    "all" | "configuration" | "recommended" | "secretlintOnly";
 export function extractPresetDetailMatrixSection(
     presetName: PresetDisplayName,
     markdown: string

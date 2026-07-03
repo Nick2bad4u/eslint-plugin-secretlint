@@ -5,7 +5,7 @@ import { createRequirePropertyRule } from "../_internal/config-rule-factories.js
 /**
  * RequireSecretlintRulesArrayRule ESLint rule contract.
  */
-const requireSecretlintRulesArrayRule: RuleModuleWithDocs<
+const secretlintRulesArrayRule: RuleModuleWithDocs<
     "configProblem",
     readonly []
 > = createRequirePropertyRule({
@@ -20,4 +20,4 @@ const requireSecretlintRulesArrayRule: RuleModuleWithDocs<
     recommended: true,
 });
 
-export default requireSecretlintRulesArrayRule;
+export default secretlintRulesArrayRule;

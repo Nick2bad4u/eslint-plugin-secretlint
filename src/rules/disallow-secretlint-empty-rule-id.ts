@@ -5,7 +5,7 @@ import { createNoEmptyStringRule } from "../_internal/config-rule-factories.js";
 /**
  * DisallowSecretlintEmptyRuleIdRule ESLint rule contract.
  */
-const disallowSecretlintEmptyRuleIdRule: RuleModuleWithDocs<
+const secretlintEmptyRuleIdRule: RuleModuleWithDocs<
     "configProblem",
     readonly []
 > = createNoEmptyStringRule({
@@ -19,4 +19,4 @@ const disallowSecretlintEmptyRuleIdRule: RuleModuleWithDocs<
     recommended: true,
 });
 
-export default disallowSecretlintEmptyRuleIdRule;
+export default secretlintEmptyRuleIdRule;

@@ -57,15 +57,15 @@ describe("secretlint bridge rule", () => {
                     temporaryDirectory,
                     ".secretlintrc.cjs"
                 );
-                const ignorePath = path.join(
+                const secretlintIgnoreFilePath = path.join(
                     temporaryDirectory,
                     ".secretlintignore"
                 );
                 writeFileSync(configPath, "module.exports = { rules: [] };\n");
-                writeFileSync(ignorePath, "\n");
+                writeFileSync(secretlintIgnoreFilePath, "\n");
                 const eslint = createEngine({
                     configFile: configPath,
-                    ignoreFile: ignorePath,
+                    ignoreFile: secretlintIgnoreFilePath,
                     locale: "en",
                     maskSecrets: false,
                     respectGitignore: false,

@@ -11,7 +11,7 @@ const toNameSet = (values: Iterable<string>): ReadonlySet<string> =>
 const isConfigArray = (
     config: SecretlintConfig
 ): config is readonly Linter.Config[] => Array.isArray(config);
-const requireConfigArray = (
+const getConfigArray = (
     config: SecretlintConfig,
     configName: string
 ): readonly Linter.Config[] => {
@@ -102,7 +102,7 @@ describe("secretlint plugin configs", () => {
     it("keeps parser-neutral bridge rules from replacing upstream parsers", async () => {
         expect.assertions(4);
 
-        const allConfig = requireConfigArray(
+        const allConfig = getConfigArray(
             secretlintPlugin.configs.all,
             "secretlint.configs.all"
         );

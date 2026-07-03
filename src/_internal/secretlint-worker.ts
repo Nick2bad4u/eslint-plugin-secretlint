@@ -1,8 +1,8 @@
-import type { JsonObject } from "type-fest";
+import type { JsonObject, UnknownRecord } from "type-fest";
 
 import { isMainThread, parentPort } from "node:worker_threads";
 import { runSecretLint } from "secretlint";
-import { isDefined } from "ts-extras";
+import { isDefined, keyIn } from "ts-extras";
 
 import type {
     SecretlintWorkerRequest,
@@ -13,10 +13,26 @@ import type {
 
 const DONE_STATE = 1 as const;
 
+type ErrorLike = Readonly<{
+    message: string;
+    name?: string;
+    stack?: string;
+}>;
 type JsonRecord = Readonly<JsonObject>;
 
 const isJsonRecord = (value: unknown): value is JsonRecord =>
     typeof value === "object" && value !== null;
+
+const isUnknownRecord = (value: unknown): value is UnknownRecord =>
+    typeof value === "object" && value !== null && !Array.isArray(value);
+
+const isErrorLike = (value: unknown): value is ErrorLike => {
+    if (!isUnknownRecord(value)) {
+        return false;
+    }
+
+    return keyIn(value, "message") && typeof value["message"] === "string";
+};
 
 const toJsonRecord = (value: unknown): JsonRecord =>
     isJsonRecord(value) ? value : {};
@@ -99,7 +115,7 @@ const runSecretlint = async (
             ...(isDefined(options.locale) && { locale: options.locale }),
         },
     });
-    if (result.stderr instanceof Error) throw result.stderr;
+    if (isErrorLike(result.stderr)) throw result.stderr;
     return {
         messages: parseSecretlintOutput(result.stdout),
     };
@@ -126,17 +142,21 @@ const handleRequest = async (
             result: await runSecretlint(request),
         });
     } catch (error: unknown) {
-        const normalizedError =
-            error instanceof Error
-                ? {
-                      message: error.message,
-                      name: error.name,
-                      ...(isDefined(error.stack) && { stack: error.stack }),
-                  }
-                : {
-                      message: `Unknown Secretlint worker failure: ${String(error)}`,
-                      name: "SecretlintWorkerError",
-                  };
+        const normalizedError = isErrorLike(error)
+            ? {
+                  message: error.message,
+                  name:
+                      typeof error.name === "string"
+                          ? error.name
+                          : "SecretlintWorkerError",
+                  ...(typeof error.stack === "string" && {
+                      stack: error.stack,
+                  }),
+              }
+            : {
+                  message: `Unknown Secretlint worker failure: ${String(error)}`,
+                  name: "SecretlintWorkerError",
+              };
         notifyCompletion(request, { error: normalizedError, ok: false });
     }
 };

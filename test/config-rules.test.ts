@@ -36,7 +36,7 @@ const hasParseForEslint = (
     parser: Linter.Parser
 ): parser is Linter.Parser & RawParserWithParseForEslint =>
     "parseForESLint" in parser && typeof parser.parseForESLint === "function";
-const requireParseForEslint = (
+const getParserWithParseForEslint = (
     parser: Linter.Parser
 ): RawParserWithParseForEslint => {
     if (hasParseForEslint(parser)) return parser;
@@ -146,7 +146,7 @@ describe("secretlint config rules", () => {
     it("parses raw text with stable source locations", () => {
         expect.assertions(5);
 
-        const parser = requireParseForEslint(rawTextParser);
+        const parser = getParserWithParseForEslint(rawTextParser);
         const result = parser.parseForESLint("one\r\ntwo\n\u{2029}three");
 
         expect(result?.ast.type).toBe("Program");

@@ -318,6 +318,7 @@ function createScrollIndicator(): CleanupFunction {
     };
 
     const scrollAbortController = new AbortController();
+    // eslint-disable-next-line unicorn/prefer-observer-apis -- The progress bar needs continuous scroll position, not element visibility.
     window.addEventListener("scroll", update, {
         passive: true,
         signal: scrollAbortController.signal,

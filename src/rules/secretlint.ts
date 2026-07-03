@@ -1,4 +1,6 @@
-import { isDefined } from "ts-extras";
+import type { UnknownRecord } from "type-fest";
+
+import { isDefined, keyIn } from "ts-extras";
 
 import { runSecretlintSynchronously } from "../_internal/secretlint-runner.js";
 import {
@@ -40,6 +42,27 @@ const toEslintLoc = (
         line: message.line,
     },
 });
+
+const isUnknownRecord = (value: unknown): value is UnknownRecord =>
+    typeof value === "object" && value !== null && !Array.isArray(value);
+
+const toErrorMessage = (error: unknown): string => {
+    if (isUnknownRecord(error)) {
+        if (!keyIn(error, "message")) {
+            return "Unknown Secretlint configuration error.";
+        }
+
+        const message: unknown = error["message"];
+
+        if (typeof message === "string") {
+            return message;
+        }
+
+        return "Unknown Secretlint configuration error.";
+    }
+
+    return String(error);
+};
 
 /**
  * SecretlintRule ESLint rule contract.
@@ -83,10 +106,7 @@ const secretlintRule: RuleModuleWithDocs<MessageIds, Options> = createTypedRule<
                 } catch (error: unknown) {
                     context.report({
                         data: {
-                            message:
-                                error instanceof Error
-                                    ? error.message
-                                    : String(error),
+                            message: toErrorMessage(error),
                         },
                         loc: {
                             end: { column: 0, line: 1 },

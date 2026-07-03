@@ -21,8 +21,7 @@ export type SecretlintWorkerRequest = Readonly<{
  * SecretlintWorkerResponse secretlint worker response contract.
  */
 export type SecretlintWorkerResponse =
-    | SecretlintWorkerErrorResponse
-    | SecretlintWorkerSuccessResponse;
+    SecretlintWorkerErrorResponse | SecretlintWorkerSuccessResponse;
 /**
  * SecretlintWorkerSuccessResponse secretlint worker success response contract.
  */

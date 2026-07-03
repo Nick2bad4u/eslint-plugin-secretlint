@@ -5,7 +5,7 @@ import { createFilenameRule } from "../_internal/config-rule-factories.js";
 /**
  * RequireSecretlintConfigFileNamingConventionRule ESLint rule contract.
  */
-const requireSecretlintConfigFileNamingConventionRule: RuleModuleWithDocs<
+const secretlintConfigFileNamingConventionRule: RuleModuleWithDocs<
     "configProblem",
     readonly []
 > = createFilenameRule({
@@ -22,4 +22,4 @@ const requireSecretlintConfigFileNamingConventionRule: RuleModuleWithDocs<
     recommended: true,
 });
 
-export default requireSecretlintConfigFileNamingConventionRule;
+export default secretlintConfigFileNamingConventionRule;
