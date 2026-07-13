@@ -23,7 +23,7 @@ const config = [
             "prettier.config.mjs",
             "stylelint.config.mjs",
         ],
-        plugins: { secretlint: false },
+        plugins: { secretlint: false, "stylelint-2": false },
     }),
     {
         ignores: [

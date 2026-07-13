@@ -73,7 +73,10 @@ const toSerializableMessage = (
 };
 
 const parseSecretlintOutput = (
-    stdout: null | string | undefined
+    stdout:
+        | null
+        | string
+        | undefined
 ): SerializableSecretlintMessage[] => {
     const parsedJson: unknown = JSON.parse(stdout ?? "[]");
     if (!Array.isArray(parsedJson)) return [];
