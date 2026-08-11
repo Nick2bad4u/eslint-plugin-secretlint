@@ -59,49 +59,22 @@ const SIDEBAR_TOKENIZED_DATA_KEY = "sbTokenized";
 function applySidebarLabelTokenColoring(): CleanupFunction {
     const mutations: SidebarLabelMutation[] = [];
 
-    const processLinks = (sidebarLinks: readonly HTMLAnchorElement[]): void => {
-        for (const link of sidebarLinks) {
-            if (isSidebarLinkTokenized(link)) {
-                continue;
-            }
+    const processLink = (link: HTMLAnchorElement): void => {
+        if (isSidebarLinkTokenized(link)) return;
 
-            const linkLabel = link.textContent.trim();
+        const linkLabel = link.textContent.trim();
 
-            if (!linkLabel) {
-                continue;
-            }
+        if (!linkLabel) return;
 
-            if (isRuntimeSidebarLink(link)) {
-                const runtimePrefix = getRuntimeSidebarKindPrefix(linkLabel);
+        if (isRuntimeSidebarLink(link)) {
+            const runtimePrefix = getRuntimeSidebarKindPrefix(linkLabel);
 
-                if (runtimePrefix !== null) {
-                    const remainderText = linkLabel
-                        .slice(runtimePrefix.length)
-                        .trimStart();
+            if (runtimePrefix !== null) {
+                const remainderText = linkLabel
+                    .slice(runtimePrefix.length)
+                    .trimStart();
 
-                    if (remainderText.length > 0) {
-                        mutations.push({
-                            element: link,
-                            originalLabel: linkLabel,
-                        });
-
-                        setSidebarLeadingToken({
-                            link,
-                            remainderText,
-                            separator: "",
-                            tokenClassName: "sb-inline-runtime-kind",
-                            tokenText: `${runtimePrefix}${nonBreakingSpace}`,
-                        });
-                    }
-
-                    continue;
-                }
-            }
-
-            if (isNumberedRuleSidebarLink(link)) {
-                const ruleNumberPrefix = getRuleNumberPrefix(linkLabel);
-
-                if (ruleNumberPrefix !== null) {
+                if (remainderText.length > 0) {
                     mutations.push({
                         element: link,
                         originalLabel: linkLabel,
@@ -109,12 +82,39 @@ function applySidebarLabelTokenColoring(): CleanupFunction {
 
                     setSidebarLeadingToken({
                         link,
-                        remainderText: ruleNumberPrefix.remainder,
-                        tokenClassName: "sb-inline-rule-number",
-                        tokenText: ruleNumberPrefix.numberToken,
+                        remainderText,
+                        separator: "",
+                        tokenClassName: "sb-inline-runtime-kind",
+                        tokenText: `${runtimePrefix}${nonBreakingSpace}`,
                     });
                 }
+
+                return;
             }
+        }
+
+        if (!isNumberedRuleSidebarLink(link)) return;
+
+        const ruleNumberPrefix = getRuleNumberPrefix(linkLabel);
+
+        if (ruleNumberPrefix !== null) {
+            mutations.push({
+                element: link,
+                originalLabel: linkLabel,
+            });
+
+            setSidebarLeadingToken({
+                link,
+                remainderText: ruleNumberPrefix.remainder,
+                tokenClassName: "sb-inline-rule-number",
+                tokenText: ruleNumberPrefix.numberToken,
+            });
+        }
+    };
+
+    const processLinks = (sidebarLinks: readonly HTMLAnchorElement[]): void => {
+        for (const link of sidebarLinks) {
+            processLink(link);
         }
     };
 

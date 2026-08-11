@@ -42,6 +42,24 @@ const config = [
         ],
     },
     { ...localConfigurationPreset, name: "Local Secretlint config rules" },
+    {
+        files: ["src/rules/**/*.ts"],
+        name: "ESLint rule metadata ordering",
+        rules: {
+            "eslint-plugin/meta-property-ordering": [
+                "error",
+                [
+                    "defaultOptions",
+                    "deprecated",
+                    "docs",
+                    "languages",
+                    "messages",
+                    "schema",
+                    "type",
+                ],
+            ],
+        },
+    },
 ];
 
 export default config;

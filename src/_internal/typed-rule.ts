@@ -46,6 +46,7 @@ export type RuleModuleWithDocs<
     meta: TSESLint.RuleMetaData<MessageIds, SecretlintRuleDocs, Options> & {
         deprecated: boolean;
         docs: SecretlintRuleDocs;
+        languages?: readonly ("*" | `${string}/${string}`)[];
     };
     name: string;
 };

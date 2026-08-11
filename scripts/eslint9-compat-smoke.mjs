@@ -1,8 +1,9 @@
-import { ESLint } from "eslint";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { rm } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import pc from "picocolors";
 
 /** @typedef {import("eslint").Linter.Config} FlatConfig */
@@ -10,6 +11,13 @@ import pc from "picocolors";
 /** @typedef {Record<string, FlatConfig | readonly FlatConfig[]>} PluginConfigs */
 
 const positiveIntegerPattern = /^(?:[1-9]\d*)$/u;
+const consumerRequire = createRequire(join(process.cwd(), "package.json"));
+
+/** @param {string} packageName */
+const importFromConsumer = async (packageName) => {
+    const modulePath = consumerRequire.resolve(packageName);
+    return import(pathToFileURL(modulePath).href);
+};
 
 /** @param {string} value */
 const parsePositiveInteger = (value) => {
@@ -87,7 +95,7 @@ const getSingleFlatConfig = (pluginConfigs, configName) => {
 
 /** @returns {Promise<PluginConfigs>} */
 const loadPluginConfigs = async () => {
-    const pluginModule = await import("../plugin.mjs");
+    const pluginModule = await importFromConsumer("eslint-plugin-secretlint");
     const pluginValue = pluginModule.default;
     return /** @type {PluginConfigs} */ (pluginValue.configs ?? {});
 };
@@ -104,6 +112,10 @@ const assertDiagnostic = (result, ruleId, label) => {
 };
 
 const run = async () => {
+    const eslintModule = /** @type {typeof import("eslint")} */ (
+        await importFromConsumer("eslint")
+    );
+    const { ESLint } = eslintModule;
     const expectedEslintMajor = getExpectedEslintMajor(process.argv.slice(2));
     const installedEslintMajor = getEslintMajorVersion(ESLint.version);
 

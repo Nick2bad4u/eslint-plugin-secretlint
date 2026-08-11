@@ -50,7 +50,7 @@ describe("secretlint bridge rule", () => {
     it("accepts clean text files without diagnostics", async () => {
         expect.assertions(1);
 
-        await usingTemporaryDirectory(
+        const messages = await usingTemporaryDirectory(
             "secretlint-bridge-clean-",
             async (temporaryDirectory) => {
                 const configPath = path.join(
@@ -74,10 +74,11 @@ describe("secretlint bridge rule", () => {
                 const [result] = await eslint.lintText("hello world\n", {
                     filePath: "sample.txt",
                 });
-
-                expect(result?.messages).toHaveLength(0);
+                return result?.messages ?? [];
             }
         );
+
+        expect(messages).toHaveLength(0);
     }, 30_000);
 
     it("lints text fixture files from disk with forwarded options", async () => {
@@ -114,7 +115,7 @@ describe("secretlint bridge rule", () => {
     it("reports Secretlint diagnostics through ESLint", async () => {
         expect.assertions(4);
 
-        await usingTemporaryDirectory(
+        const messages = await usingTemporaryDirectory(
             "secretlint-bridge-",
             async (temporaryDirectory) => {
                 const configPath = path.join(
@@ -132,19 +133,14 @@ describe("secretlint bridge rule", () => {
                         filePath: "sample.env",
                     }
                 );
-
-                expect(result?.messages).not.toHaveLength(0);
-                expect(result?.messages[0]?.ruleId).toBe(
-                    "secretlint/secretlint"
-                );
-                expect(result?.messages[0]?.messageId).toBe(
-                    "secretlintProblem"
-                );
-                expect(result?.messages[0]?.message).toStrictEqual(
-                    expect.any(String)
-                );
+                return result?.messages ?? [];
             }
         );
+
+        expect(messages).not.toHaveLength(0);
+        expect(messages[0]?.ruleId).toBe("secretlint/secretlint");
+        expect(messages[0]?.messageId).toBe("secretlintProblem");
+        expect(messages[0]?.message).toStrictEqual(expect.any(String));
     }, 30_000);
 
     it("reports serialized Secretlint runner messages with locations", async () => {

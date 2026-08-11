@@ -51,7 +51,6 @@ const knipConfig: KnipConfig = {
         "@stylelint.*",
         "@types.*",
         "eslint.*",
-        "madge",
         "postcss.*",
         "remark.*",
         "stylelint.*",
