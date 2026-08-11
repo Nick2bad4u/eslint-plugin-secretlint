@@ -18,13 +18,8 @@ const getDocumentEndPosition = (text: string): SourcePosition => {
     let line = 1;
     for (let index = 0; index < text.length; index += 1) {
         const character = text[index];
-        if (character === "\r") {
-            line += 1;
-            column = 0;
-            if (text[index + 1] === "\n") index += 1;
-            continue;
-        }
-        if (
+        const isLineBreak =
+            character === "\r" ||
             arrayIncludes(
                 [
                     "\n",
@@ -32,13 +27,14 @@ const getDocumentEndPosition = (text: string): SourcePosition => {
                     "\u{2029}",
                 ] as const,
                 character
-            )
-        ) {
+            );
+        if (isLineBreak) {
             line += 1;
             column = 0;
-            continue;
+            if (character === "\r" && text[index + 1] === "\n") index += 1;
+        } else {
+            column += 1;
         }
-        column += 1;
     }
     return { column, line };
 };

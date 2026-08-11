@@ -56,14 +56,21 @@ jobs:
               uses: "actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0" # v7.0.0
 
             - name: "Setup Node.js"
-              uses: "actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e" # v6.4.0
+              uses: "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020" # v7.0.0
               with:
                   node-version-file: ".node-version"
-                  cache: "npm"
-                  cache-dependency-path: "package-lock.json"
+                  package-manager-cache: false
+
+            - name: "Install pinned npm"
+              run: |
+                  npm_package_manager=$(node -p "require('./package.json').packageManager")
+                  (cd "${RUNNER_TEMP}" && npm install --global --ignore-scripts "${npm_package_manager}")
+                  expected_npm_version="${npm_package_manager#npm@}"
+                  actual_npm_version=$(npm --version)
+                  test "${actual_npm_version}" = "${expected_npm_version}"
 
             - name: "Install dependencies"
-              run: "npm ci --force"
+              run: "npm ci"
 
             - name: "Build package"
               run: "npm run build"
@@ -149,20 +156,39 @@ jobs:
               uses: "actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0" # v7.0.0
 
             - name: "Setup Node.js"
-              uses: "actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e" # v6.4.0
+              uses: "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020" # v7.0.0
               with:
                   node-version-file: ".node-version"
-                  cache: "npm"
-                  cache-dependency-path: "package-lock.json"
+                  package-manager-cache: false
+
+            - name: "Install pinned npm"
+              run: |
+                  npm_package_manager=$(node -p "require('./package.json').packageManager")
+                  (cd "${RUNNER_TEMP}" && npm install --global --ignore-scripts "${npm_package_manager}")
+                  expected_npm_version="${npm_package_manager#npm@}"
+                  actual_npm_version=$(npm --version)
+                  test "${actual_npm_version}" = "${expected_npm_version}"
 
             - name: "Install dependencies"
-              run: "npm ci --force"
+              run: "npm ci"
 
             - name: "Build package"
               run: "npm run build"
 
-            - name: "Install ESLint 9 runtime for compatibility smoke checks"
-              run: "npm install --no-save --force eslint@${{ matrix.eslint-version }} @eslint/js@${{ matrix.eslint-js-version }}"
-
-            - name: "Run ESLint 9 compatibility smoke checks"
-              run: "npm run lint:compat:eslint9 -- --expect-eslint-major=9"
+            - name: "Run ESLint 9 consumer compatibility smoke checks"
+              run: |
+                  package_name=$(node -p "require('./package.json').name")
+                  secretlint_version=$(node -p "require('./package.json').dependencies.secretlint")
+                  pack_metadata_path="${RUNNER_TEMP}/npm-pack.json"
+                  npm pack --ignore-scripts --json --pack-destination "${RUNNER_TEMP}" > "${pack_metadata_path}"
+                  tarball_filename=$(node scripts/read-npm-pack-filename.mjs "${pack_metadata_path}" "${package_name}")
+                  consumer_dir="${RUNNER_TEMP}/eslint9-consumer"
+                  mkdir -p "${consumer_dir}"
+                  cd "${consumer_dir}"
+                  npm init --yes >/dev/null
+                  npm install --ignore-scripts --no-save \
+                    "eslint@${{ matrix.eslint-version }}" \
+                    "@eslint/js@${{ matrix.eslint-js-version }}" \
+                    "@secretlint/secretlint-rule-pattern@${secretlint_version}" \
+                    "${RUNNER_TEMP}/${tarball_filename}"
+                  node "${GITHUB_WORKSPACE}/scripts/eslint9-compat-smoke.mjs" --expect-eslint-major=9

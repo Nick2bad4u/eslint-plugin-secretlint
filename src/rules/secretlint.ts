@@ -65,68 +65,66 @@ const toErrorMessage = (error: unknown): string => {
 };
 
 /**
- * SecretlintRule ESLint rule contract.
- */
-/**
  * SecretlintRule ESLint bridge rule contract.
  */
 const secretlintRule: RuleModuleWithDocs<MessageIds, Options> = createTypedRule<
     MessageIds,
     Options
 >({
-    create: (context, [rawOptions = {}]) =>
-        toRuleListener({
-            Program() {
-                const lintOptions = {
-                    code: context.sourceCode.text,
-                    codeFilename: context.physicalFilename,
-                    cwd: context.cwd,
-                    ...(isDefined(rawOptions.configFile) && {
-                        configFile: rawOptions.configFile,
-                    }),
-                    ...(isDefined(rawOptions.ignoreFile) && {
-                        ignoreFile: rawOptions.ignoreFile,
-                    }),
-                    ...(isDefined(rawOptions.locale) && {
-                        locale: rawOptions.locale,
-                    }),
-                    ...(isDefined(rawOptions.maskSecrets) && {
-                        maskSecrets: rawOptions.maskSecrets,
-                    }),
-                    ...(isDefined(rawOptions.respectGitignore) && {
-                        respectGitignore: rawOptions.respectGitignore,
-                    }),
-                    ...(isDefined(rawOptions.timeoutMs) && {
-                        timeoutMs: rawOptions.timeoutMs,
-                    }),
-                };
-                let lintResult: ReturnType<typeof runSecretlintSynchronously>;
-                try {
-                    lintResult = runSecretlintSynchronously(lintOptions);
-                } catch (error: unknown) {
-                    context.report({
-                        data: {
-                            message: toErrorMessage(error),
-                        },
-                        loc: {
-                            end: { column: 0, line: 1 },
-                            start: { column: 0, line: 1 },
-                        },
-                        messageId: "secretlintConfigError",
-                        node: context.sourceCode.ast,
-                    });
-                    return;
-                }
-                for (const message of lintResult.messages) {
-                    context.report({
-                        data: { rule: message.ruleId, text: message.message },
-                        loc: toEslintLoc(message),
-                        messageId: "secretlintProblem",
-                        node: context.sourceCode.ast,
-                    });
-                }
-            },
-        }),
+    create: (context, [rawOptions = {}]) => {
+        const checkProgram = (): void => {
+            const lintOptions = {
+                code: context.sourceCode.text,
+                codeFilename: context.physicalFilename,
+                cwd: context.cwd,
+                ...(isDefined(rawOptions.configFile) && {
+                    configFile: rawOptions.configFile,
+                }),
+                ...(isDefined(rawOptions.ignoreFile) && {
+                    ignoreFile: rawOptions.ignoreFile,
+                }),
+                ...(isDefined(rawOptions.locale) && {
+                    locale: rawOptions.locale,
+                }),
+                ...(isDefined(rawOptions.maskSecrets) && {
+                    maskSecrets: rawOptions.maskSecrets,
+                }),
+                ...(isDefined(rawOptions.respectGitignore) && {
+                    respectGitignore: rawOptions.respectGitignore,
+                }),
+                ...(isDefined(rawOptions.timeoutMs) && {
+                    timeoutMs: rawOptions.timeoutMs,
+                }),
+            };
+            let lintResult: ReturnType<typeof runSecretlintSynchronously>;
+            try {
+                lintResult = runSecretlintSynchronously(lintOptions);
+            } catch (error: unknown) {
+                context.report({
+                    data: {
+                        message: toErrorMessage(error),
+                    },
+                    loc: {
+                        end: { column: 0, line: 1 },
+                        start: { column: 0, line: 1 },
+                    },
+                    messageId: "secretlintConfigError",
+                    node: context.sourceCode.ast,
+                });
+                return;
+            }
+            for (const message of lintResult.messages) {
+                context.report({
+                    data: { rule: message.ruleId, text: message.message },
+                    loc: toEslintLoc(message),
+                    messageId: "secretlintProblem",
+                    node: context.sourceCode.ast,
+                });
+            }
+        };
+
+        return toRuleListener({ Program: checkProgram });
+    },
     meta: {
         defaultOptions: [{}],
         deprecated: false,
@@ -142,6 +140,7 @@ const secretlintRule: RuleModuleWithDocs<MessageIds, Options> = createTypedRule<
             requiresTypeChecking: false,
             url: "https://nick2bad4u.github.io/eslint-plugin-secretlint/docs/rules/secretlint",
         },
+        languages: ["*"],
         messages: {
             secretlintConfigError:
                 "Secretlint configuration error: {{message}}",
