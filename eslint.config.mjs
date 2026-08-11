@@ -18,6 +18,7 @@ const config = [
     ...createConfig({
         allowDefaultProjectFilePatterns: [
             ".remarkrc.mjs",
+            "eslint.actionlint.config.mjs",
             "eslint.config.mjs",
             "knip.config.ts",
             "prettier.config.mjs",
