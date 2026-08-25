@@ -15,6 +15,7 @@ npm install --save-dev eslint-plugin-secretlint eslint secretlint
 - **Supported ESLint versions:** `9.x` and `10.x`
 - **Config system:** Flat Config only
 - **Node.js runtime:** `>=22.0.0`
+- **Oxlint:** Not compatible as a complete plugin with Oxlint 1.80.0 because its raw-text bridge requires a custom parser for `.env`, `.ini`, `.toml`, `.txt`, and `.xml` files, and [Oxlint JavaScript plugins do not support custom formats](https://oxc.rs/docs/guide/usage/linter/js-plugins.html); use ESLint for this plugin.
 
 ## Quick start
 
